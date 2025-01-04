@@ -1,0 +1,23 @@
+---
+  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
+    hosts: rpidev
+    remote_user: '{{ remote }}'
+    become: yes
+    roles:
+      - dev-server
+
+  - name: Copy license file to rslsync home
+    hosts: rpidev
+    remote_user: '{{ remote }}'
+    become: yes
+    roles:
+      - resilio-license
+
+
+  # Install Resilio Sync
+  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
+    hosts: rpidev
+    remote_user: '{{ remote }}'
+    become: yes
+    roles:
+      - ansible-role-install-resilio

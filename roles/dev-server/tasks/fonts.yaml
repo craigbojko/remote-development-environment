@@ -1,0 +1,22 @@
+# Check if the fonts directory exists
+- name: Check if the fonts directory exists
+  stat:
+    path: /tmp/fonts
+  register: fonts_dir
+
+# Clone Powerline fonts repository
+- name: Clone Powerline fonts repository
+  git:
+    repo: 'https://github.com/powerline/fonts.git'
+    dest: /tmp/fonts
+    version: master
+  when: not fonts_dir.stat.exists
+
+# Install Powerline fonts
+- name: Install Powerline fonts
+  shell: ./install.sh
+  args:
+    chdir: /tmp/fonts
+  # become: true
+  when: not fonts_dir.stat.exists
+  

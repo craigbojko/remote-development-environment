@@ -1,0 +1,13 @@
+# Set up SSH keys for the development user
+- name: Set up SSH keys for devuser
+  authorized_key:
+    user: '{{ ansible_user }}'
+    state: present
+    key: "{{ lookup('file', '/Users/{{ ansible_user }}/.ssh/lucius.pub') }}"
+
+# Set up SSH keys for the development user
+- name: Set up SSH keys for devuser (iPad)
+  authorized_key:
+    user: '{{ ansible_user }}'
+    state: present
+    key: "{{ lookup('file', '/Users/{{ ansible_user }}/.ssh/ipad.pub') }}"

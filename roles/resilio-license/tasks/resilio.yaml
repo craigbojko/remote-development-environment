@@ -1,0 +1,8 @@
+# Copy license file to home
+- name: Copy license file to home
+  copy:
+    src: '{{ resilio_sync_license_file }}'
+    dest: /home/rslsync/resilio-sync-license.txt
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'

@@ -1,0 +1,13 @@
+---
+# Resilio Sync
+- include_tasks: resilio.yaml
+
+# Setup Resilio Sync
+- name: Create a Resilio folder under /mnt
+  become: yes
+  args:
+    executable: /bin/zsh
+  shell: |
+    sudo mkdir -p /mnt/resilio
+    sudo chown -R {{ ansible_user }}:rslsync /mnt/resilio
+    sudo chmod -R 775 /mnt/resilio

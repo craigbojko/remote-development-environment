@@ -1,0 +1,28 @@
+# Set hostname to 'rpi-dev-server'
+- name: Set hostname
+  hostname:
+    name: rpi-dev-server
+
+# Ensure the latest version of apt package manager
+- name: Update apt package manager
+  apt:
+    update_cache: yes
+
+# Install necessary packages
+- name: Install required packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - git
+    - vim
+    - curl
+    - build-essential
+
+# Create a user for development
+- name: Create development user
+  user:
+    name: '{{ ansible_user }}'
+    state: present
+    groups: sudo
+    create_home: yes

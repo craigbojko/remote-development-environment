@@ -1,0 +1,3 @@
+# Github checkout/merge aliases
+alias cb='git branch | fzf --header Checkout | xargs git checkout'
+alias mb='git branch | fzf --header Merge | xargs git merge'
