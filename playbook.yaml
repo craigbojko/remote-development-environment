@@ -21,3 +21,10 @@
     become: yes
     roles:
       - ansible-role-install-resilio
+
+  - name: Install Docker
+    hosts: rpidev
+    remote_user: '{{ remote }}'
+    become: yes
+    roles:
+      - docker

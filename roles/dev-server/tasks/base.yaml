@@ -18,6 +18,7 @@
     - vim
     - curl
     - build-essential
+    - ca-certificates
 
 # Create a user for development
 - name: Create development user
