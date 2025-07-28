@@ -6,7 +6,7 @@
 # Created Date: Saturday, January 4th 2025, 4:43:07 pm
 # Author: Craig Bojko
 # -----
-# Last Modified: Tue Feb 11 2025
+# Last Modified: Tue Jul 15 2025
 # Modified By: Craig Bojko
 # -----
 # Copyright (c) 2025 Pixel Ventures Ltd.
@@ -20,5 +20,5 @@ ansible-playbook \
   --extra-vars "@vars/remote-user.yaml" \
   --extra-vars "@vars/resilio.yaml" \
   --extra-vars "@vars/oh-my-zsh.yaml" \
-  # --verbose \
+  --verbose \
   playbook.yaml

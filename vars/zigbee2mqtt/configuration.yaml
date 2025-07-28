@@ -1,0 +1,47 @@
+version: 4
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://localhost:1883
+  user: zigbee
+  password: zigbee
+serial:
+  port: >-
+    /dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_2ae23feed16bef1182f697adc169b110-if00-port0
+  adapter: zstack
+  baudrate: 115200
+  rtscts: false
+advanced:
+  log_level: info
+  channel: 25
+  network_key:
+    - 123
+    - 86
+    - 75
+    - 190
+    - 148
+    - 49
+    - 134
+    - 210
+    - 152
+    - 160
+    - 235
+    - 173
+    - 1
+    - 235
+    - 205
+    - 252
+  pan_id: 42228
+  ext_pan_id:
+    - 31
+    - 191
+    - 170
+    - 177
+    - 242
+    - 62
+    - 126
+    - 46
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: true

@@ -1,13 +1,14 @@
-# Set up SSH keys for the development user
-- name: Set up SSH keys for devuser
-  authorized_key:
-    user: '{{ ansible_user }}'
-    state: present
-    key: "{{ lookup('file', '/Users/{{ ansible_user }}/.ssh/lucius.pub') }}"
+# Set a list of public keys to be added to the authorized_keys file for the development user.
+- name: Define ssh public keys for remote user to accept
+  set_fact:
+    local_values:
+      lucius: '~/.ssh/lucius.pub'
+      ipad: '~/.ssh/ipad.pub'
 
-# Set up SSH keys for the development user
-- name: Set up SSH keys for devuser (iPad)
+# Set up SSH keys for the remote user by iterating over local_values
+- name: Set up SSH keys for remote user
   authorized_key:
-    user: '{{ ansible_user }}'
+    user: "{{ ansible_user }}"
     state: present
-    key: "{{ lookup('file', '/Users/{{ ansible_user }}/.ssh/ipad.pub') }}"
+    key: "{{ lookup('file', item.value) }}"
+  loop: "{{ local_values | dict2items }}"
