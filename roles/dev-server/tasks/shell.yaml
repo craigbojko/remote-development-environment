@@ -13,7 +13,7 @@
 # Copy the new initial .zshrc file from the template folder if it doesn't already exist on the remote
 - name: Copy new initial .zshrc file from template
   template:
-    src: zshrc
+    src: ../../templates/zshrc
     dest: /home/{{ ansible_user }}/.zshrc
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'

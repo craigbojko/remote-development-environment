@@ -1,0 +1,7 @@
+defaults:
+  remote: pi
+  hostname: rpi
+  powerlinefonts: powerline-fonts
+  authorized_keys:
+    lucius: '~/.ssh/lucius.pub'
+    ipad: '~/.ssh/ipad.pub'

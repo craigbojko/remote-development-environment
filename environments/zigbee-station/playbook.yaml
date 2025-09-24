@@ -2,14 +2,6 @@
 ######################################################
 ## Base Setup
 ######################################################
-
-  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts:
-      - rpidev
-    roles:
-      - dev-server
   
   - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
     remote_user: pi
@@ -21,35 +13,8 @@
 
 
 ######################################################
-## Resilio Sync Setup
-######################################################
-
-  - name: Copy license file to rslsync home
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts: rpidev
-    roles:
-      - resilio-license
-
-  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts: rpidev
-    roles:
-      - ansible-role-install-resilio
-
-
-######################################################
 ## Docker Setup
 ######################################################
-
-  - name: Install Docker
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts:
-      - rpidev
-    roles:
-      - docker
 
   - name: Install Docker
     remote_user: 'pi'

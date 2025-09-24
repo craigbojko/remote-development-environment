@@ -1,0 +1,35 @@
+---
+
+######################################################
+## Base Setup
+######################################################
+
+  - name: Ansible Playbook for configuring RPi-K3S-Node on Raspberry Pi
+    # remote_user: '{{ defaults.remote }}'
+    remote_user: '{{ remote | default(defaults.remote) }}'
+    become: yes
+    hosts:
+      - rpi-k3s-master
+    vars:
+      locals: "{{ defaults | combine(overrides | default({})) }}"
+      overrides:
+        hostname: "{{ hostname | default('rpi-k3s-node-' + (9999 | random | string)) }}"
+
+    roles:
+      - role: dev-server
+        vars:
+          config: "{{ locals }}"
+
+
+######################################################
+## K3S Setup
+######################################################
+
+  # - name: Install K3S
+  #   remote_user: '{{ remote }}'
+  #   become: yes
+  #   hosts:
+  #     - rpi-k3s-master
+  #   roles:
+  #     - k3s-master
+

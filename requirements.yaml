@@ -1,0 +1,10 @@
+# roles from Galaxy or Git
+roles:
+  - name: klems.install-resilio
+    version: "*"      # pin to a tag/semver when you know it
+
+# collections used by roles/tasks (optional)
+collections:
+  # - name: community.general
+  #   version: ">=8.0.0"
+

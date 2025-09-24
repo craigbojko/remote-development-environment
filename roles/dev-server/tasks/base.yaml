@@ -1,7 +1,16 @@
-# Set hostname to 'rpi-dev-server'
+
+- name: Locals
+  set_fact:
+    hostname: "{{ config.hostname | default('rpi-' + 9999 | random | string) }}"
+
+- name: Debug Config
+  debug:
+    var: config
+
+# Set hostname
 - name: Set hostname
   hostname:
-    name: rpi-dev-server
+    name: '{{ config.hostname }}'
 
 # Ensure the latest version of apt package manager
 - name: Update apt package manager
