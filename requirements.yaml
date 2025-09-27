@@ -1,10 +1,15 @@
 # roles from Galaxy or Git
 roles:
-  - name: klems.install-resilio
-    version: "*"      # pin to a tag/semver when you know it
+  - name: xanmanning.k3s
+    version: "v3.6.0"
+  # - name: klems.install-resilio
+  #   version: "*"      # pin to a tag/semver when you know it
 
 # collections used by roles/tasks (optional)
 collections:
+  # - name: https://github.com/k3s-io/k3s-ansible.git
+  #   type: git
+  #   version: main
   # - name: community.general
   #   version: ">=8.0.0"
 

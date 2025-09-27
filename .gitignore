@@ -45,7 +45,13 @@ npm-debug.log
 #########################
 .env
 
+# Ansible Vault password file #
+#########################
+.ansible_vault_pass
 
 ## Resilio Sync location - specific to my setup
 hosts
 vars/resilio.yaml
+
+## Galaxy install files
+roles/xanmanning.k3s/

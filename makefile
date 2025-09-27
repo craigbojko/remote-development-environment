@@ -20,5 +20,6 @@ zigbee-station:
 
 k3s-node:
 	./run.sh k3s-node \
+		--tags=$(tags) \
 		--hostname=$(hostname) \
 		--remote=$(user)

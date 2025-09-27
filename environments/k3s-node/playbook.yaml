@@ -4,32 +4,125 @@
 ## Base Setup
 ######################################################
 
-  - name: Ansible Playbook for configuring RPi-K3S-Node on Raspberry Pi
-    # remote_user: '{{ defaults.remote }}'
-    remote_user: '{{ remote | default(defaults.remote) }}'
-    become: yes
-    hosts:
-      - rpi-k3s-master
-    vars:
-      locals: "{{ defaults | combine(overrides | default({})) }}"
-      overrides:
-        hostname: "{{ hostname | default('rpi-k3s-node-' + (9999 | random | string)) }}"
+- name: Ansible Playbook for configuring RPi-K3S-Node on Raspberry Pi
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  tags:
+    - base
+  hosts:
+    - k3s_cluster
+  vars:
+    locals: "{{ defaults | combine(overrides | default({})) }}"
+    overrides:
+      hostname: "{{ hostname | default('rpi-k3s-node-' + (9999 | random | string)) }}"
 
-    roles:
-      - role: dev-server
-        vars:
-          config: "{{ locals }}"
+  roles:
+    - role: dev-server
+      vars:
+        config: "{{ locals }}"
+
+
+######################################################
+## K3S Configuration
+######################################################
+
+- name: Set cgroup memory
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  tags:
+    - k3s-init
+  hosts: k3s_cluster
+  handlers:
+    - name: reboot
+      reboot:
+        reboot_timeout: 120
+  tasks:
+    - name: Enable cgroup memory support for k3s
+      # lineinfile:
+      #   path: /boot/firmware/cmdline.txt
+      #   regexp: '^((?:(?!cgroup_enable=memory).)*?)(\s*rootwait\s*)(.*?)$'
+      #   line: '\1\2 cgroup_memory=1 cgroup_enable=memory \3'
+      #   backrefs: yes
+      replace:
+        path: /boot/firmware/cmdline.txt
+        regexp: '^(.*rootwait)(?!.*cgroup_enable=memory)(.*)$'
+        replace: '\1 cgroup_memory=1 cgroup_enable=memory \2'
+      notify: reboot
 
 
 ######################################################
 ## K3S Setup
 ######################################################
 
-  # - name: Install K3S
-  #   remote_user: '{{ remote }}'
-  #   become: yes
-  #   hosts:
-  #     - rpi-k3s-master
-  #   roles:
-  #     - k3s-master
+- name: Install K3S Cluster
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  tags:
+    - k3s
+  hosts: k3s_cluster
+  vars_files:
+    - ../../vars/k3s-secrets.yaml
+  vars:
+    # K3s-ansible collection variables
+    k3s_become: true
+    k3s_version: v1.28.8+k3s1
+    ansible_user: "{{ remote | default(defaults.remote) }}"
+    systemd_dir: /etc/systemd/system
+    
+    # Cluster configuration
+    k3s_token: "{{ k3s_secrets.k3s_token }}"
+    k3s_url: "https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443"
+    
+    # Additional k3s server args
+    extra_server_args: ""
+    extra_agent_args: ""
+    
+  roles:
+    - role: xanmanning.k3s
+      become: true
 
+######################################################
+## Copy kubeconfig to local
+######################################################
+
+- name: Copy Kubeconfig to Local
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  tags:
+    - k3s
+    - kubeconfig
+  hosts: k3s_cluster
+  run_once: true
+  ignore_errors: true
+  vars:
+    kubeconfig_path: k3s-kubeconfig.yaml
+    kube_server: "https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443"
+  tasks:
+    - name: Copy Kubeconfig
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ kubeconfig_path }}"
+        flat: yes
+      delegate_to: "{{ groups['master'][0] }}"
+
+    - name: Update Kubeconfig server address
+      become: false
+      delegate_to: localhost
+      replace:
+        path: "{{ kubeconfig_path }}"
+        regexp: '^(.*server: )(.*)$'
+        replace: '\1{{ kube_server }}'
+
+    - name: Set KUBECONFIG environment variable
+      set_fact:
+        ansible_env:
+          KUBECONFIG: "{{ playbook_dir }}/{{ kubeconfig_path }}"
+
+    - name: Set local KUBECONFIG environment variable
+      become: false
+      delegate_to: localhost
+      shell: export KUBECONFIG={{ playbook_dir }}/{{ kubeconfig_path }}
+
+    - name: Display Kubeconfig path
+      debug:
+        msg: "Kubeconfig has been saved to {{ playbook_dir }}/{{ kubeconfig_path }}."
