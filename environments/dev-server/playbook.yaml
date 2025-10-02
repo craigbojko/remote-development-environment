@@ -3,43 +3,52 @@
 ## Base Setup
 ######################################################
 
-  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts:
-      - rpidev
-    roles:
-      - dev-server
-
+- name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpidev
+  tags:
+    - base
+  vars:
+    locals: '{{ defaults | combine(overrides | default({})) }}'
+    overrides:
+      hostname: "{{ hostname | default('rpi-dev-server-' + (9999 | random | string)) }}"
+  roles:
+    - role: dev-server
+      vars:
+        config: '{{ locals }}'
 
 ######################################################
 ## Resilio Sync Setup
 ######################################################
 
-  - name: Copy license file to rslsync home
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts: rpidev
-    roles:
-      - resilio-license
+- name: Copy license file to rslsync home
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpidev
+  tags:
+    - resilio
+  roles:
+    - resilio-license
 
-  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts: rpidev
-    roles:
-      - ansible-role-install-resilio
-
+- name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpidev
+  tags:
+    - resilio
+  roles:
+    - ansible-role-install-resilio
 
 ######################################################
 ## Docker Setup
 ######################################################
 
-  - name: Install Docker
-    remote_user: '{{ remote }}'
-    become: yes
-    hosts:
-      - rpidev
-    roles:
-      - docker
-
+- name: Install Docker
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpidev
+  tags:
+    - docker
+  roles:
+    - docker

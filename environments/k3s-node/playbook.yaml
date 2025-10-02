@@ -1,5 +1,4 @@
 ---
-
 ######################################################
 ## Base Setup
 ######################################################
@@ -12,15 +11,14 @@
   hosts:
     - k3s_cluster
   vars:
-    locals: "{{ defaults | combine(overrides | default({})) }}"
+    locals: '{{ defaults | combine(overrides | default({})) }}'
     overrides:
       hostname: "{{ hostname | default('rpi-k3s-node-' + (9999 | random | string)) }}"
 
   roles:
     - role: dev-server
       vars:
-        config: "{{ locals }}"
-
+        config: '{{ locals }}'
 
 ######################################################
 ## K3S Configuration
@@ -49,7 +47,6 @@
         replace: '\1 cgroup_memory=1 cgroup_enable=memory \2'
       notify: reboot
 
-
 ######################################################
 ## K3S Setup
 ######################################################
@@ -66,17 +63,17 @@
     # K3s-ansible collection variables
     k3s_become: true
     k3s_version: v1.28.8+k3s1
-    ansible_user: "{{ remote | default(defaults.remote) }}"
+    ansible_user: '{{ remote | default(defaults.remote) }}'
     systemd_dir: /etc/systemd/system
-    
+
     # Cluster configuration
-    k3s_token: "{{ k3s_secrets.k3s_token }}"
+    k3s_token: '{{ k3s_secrets.k3s_token }}'
     k3s_url: "https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443"
-    
+
     # Additional k3s server args
-    extra_server_args: ""
-    extra_agent_args: ""
-    
+    extra_server_args: ''
+    extra_agent_args: ''
+
   roles:
     - role: xanmanning.k3s
       become: true
@@ -101,7 +98,7 @@
     - name: Copy Kubeconfig
       fetch:
         src: /etc/rancher/k3s/k3s.yaml
-        dest: "{{ kubeconfig_path }}"
+        dest: '{{ kubeconfig_path }}'
         flat: yes
       delegate_to: "{{ groups['master'][0] }}"
 
@@ -109,14 +106,14 @@
       become: false
       delegate_to: localhost
       replace:
-        path: "{{ kubeconfig_path }}"
+        path: '{{ kubeconfig_path }}'
         regexp: '^(.*server: )(.*)$'
         replace: '\1{{ kube_server }}'
 
     - name: Set KUBECONFIG environment variable
       set_fact:
         ansible_env:
-          KUBECONFIG: "{{ playbook_dir }}/{{ kubeconfig_path }}"
+          KUBECONFIG: '{{ playbook_dir }}/{{ kubeconfig_path }}'
 
     - name: Set local KUBECONFIG environment variable
       become: false
@@ -125,4 +122,4 @@
 
     - name: Display Kubeconfig path
       debug:
-        msg: "Kubeconfig has been saved to {{ playbook_dir }}/{{ kubeconfig_path }}."
+        msg: 'Kubeconfig has been saved to {{ playbook_dir }}/{{ kubeconfig_path }}.'

@@ -2,161 +2,164 @@
 ######################################################
 ## Base Setup
 ######################################################
-  
-  - name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
-    remote_user: pi
-    become: yes
-    hosts:
-      - rpi-zigbee-station
-    roles:
-      - dev-server
 
+- name: Ansible Playbook for configuring RPi-Dev-Server on Raspberry Pi
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpi-zigbee-station
+  tags:
+    - base
+  vars:
+    locals: '{{ defaults | combine(overrides | default({})) }}'
+    overrides:
+      hostname: "{{ hostname | default('rpi-zigbee-station-' + (9999 | random | string)) }}"
+  roles:
+    - role: dev-server
+      vars:
+        config: '{{ locals }}'
 
 ######################################################
 ## Docker Setup
 ######################################################
 
-  - name: Install Docker
-    remote_user: 'pi'
-    become: yes
-    hosts:
-      - rpi-zigbee-station
-    roles:
-      - docker
-
+- name: Install Docker
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpi-zigbee-station
+  tags:
+    - docker
+  roles:
+    - docker
 
 #####################################################
 # Zigbee2MQTT Setup
 #####################################################
 
-  - name: Install Python 3 and pip
-    remote_user: 'pi'
-    become: yes
-    hosts:
-      - rpi-zigbee-station
-    vars:
-      mqtt_user: 'zigbee'
-      mqtt_password: 'zigbee'
-      mqtt_password_file: '/etc/mosquitto/mqtt_password'
-    tasks:
-      - name: Install Python 3 and pip
-        apt:
-          name:
-            - python3
-            - python3-pip
-          state: present
+- name: Install Python 3 and pip
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpi-zigbee-station
+  vars:
+    mqtt_user: 'zigbee'
+    mqtt_password: 'zigbee'
+    mqtt_password_file: '/etc/mosquitto/mqtt_password'
+  tasks:
+    - name: Install Python 3 and pip
+      apt:
+        name:
+          - python3
+          - python3-pip
+        state: present
 
-      - name: Install Mosquitto and clients
-        apt:
-          name:
-            - mosquitto
-            - mosquitto-clients
-          state: present
+    - name: Install Mosquitto and clients
+      apt:
+        name:
+          - mosquitto
+          - mosquitto-clients
+        state: present
 
-      - name: Ensure Mosquitto service is enabled and running
-        systemd:
-          name: mosquitto
-          enabled: yes
-          state: started
+    - name: Ensure Mosquitto service is enabled and running
+      systemd:
+        name: mosquitto
+        enabled: yes
+        state: started
 
-      - name: Create Mosquitto password file
-        ansible.builtin.command: mosquitto_passwd -b -c {{ mqtt_password_file }} {{ mqtt_user }} {{ mqtt_password }}
-        args:
-          creates: "{{ mqtt_password_file }}"
+    - name: Create Mosquitto password file
+      ansible.builtin.command: mosquitto_passwd -b -c {{ mqtt_password_file }} {{ mqtt_user }} {{ mqtt_password }}
+      args:
+        creates: '{{ mqtt_password_file }}'
 
-      ## Fixes a bug in the mosquitto service where it doesn't respect auth without a listener declaration.
-      - name: Ensure Mosquitto listener is configured
-        ansible.builtin.lineinfile:
-          path: /etc/mosquitto/mosquitto.conf
-          insertbefore: 'include_dir /etc/mosquitto/conf.d'
-          line: "{{ item }}"
-        loop:
-          - "listener 1883"
+    ## Fixes a bug in the mosquitto service where it doesn't respect auth without a listener declaration.
+    - name: Ensure Mosquitto listener is configured
+      ansible.builtin.lineinfile:
+        path: /etc/mosquitto/mosquitto.conf
+        insertbefore: 'include_dir /etc/mosquitto/conf.d'
+        line: '{{ item }}'
+      loop:
+        - 'listener 1883'
 
-      - name: Ensure Mosquitto config allows password authentication
-        ansible.builtin.lineinfile:
-          path: /etc/mosquitto/conf.d/auth.conf
-          create: yes
-          line: "{{ item }}"
-        loop:
-          - "allow_anonymous false"
-          - "password_file {{ mqtt_password_file }}"
+    - name: Ensure Mosquitto config allows password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/mosquitto/conf.d/auth.conf
+        create: yes
+        line: '{{ item }}'
+      loop:
+        - 'allow_anonymous false'
+        - 'password_file {{ mqtt_password_file }}'
 
-      - name: Restart Mosquitto to apply authentication changes
-        ansible.builtin.systemd:
-          name: mosquitto
-          state: restarted
+    - name: Restart Mosquitto to apply authentication changes
+      ansible.builtin.systemd:
+        name: mosquitto
+        state: restarted
 
+- name: Install Zigbee2MQTT
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  any_errors_fatal: true
+  hosts: rpi-zigbee-station
+  tasks:
+    - name: Install Zigbee2MQTT
+      ansible.builtin.git:
+        repo: 'https://github.com/Koenkk/zigbee2mqtt.git'
+        dest: /opt/zigbee2mqtt
+        version: 'master'
 
-  - name: Install Zigbee2MQTT
-    remote_user: 'pi'
-    become: yes
-    any_errors_fatal: true
-    hosts:
-      - rpi-zigbee-station
-    tasks:
-      - name: Install Zigbee2MQTT
-        ansible.builtin.git:
-          repo: 'https://github.com/Koenkk/zigbee2mqtt.git'
-          dest: /opt/zigbee2mqtt
-          version: 'master'
+    - name: Set ownership of Zigbee2MQTT directory
+      ansible.builtin.file:
+        path: /opt/zigbee2mqtt
+        recurse: yes
+        owner: pi
+        group: pi
 
-      - name: Set ownership of Zigbee2MQTT directory
-        ansible.builtin.file:
-          path: /opt/zigbee2mqtt
-          recurse: yes
-          owner: pi
-          group: pi
-          
-      - name: Ensure Node.js is installed
-        ansible.builtin.command: node -v
-        register: node_version
-        failed_when: node_version.rc != 0
+    - name: Ensure Node.js is installed
+      ansible.builtin.command: node -v
+      register: node_version
+      failed_when: node_version.rc != 0
 
-      - name: Install pnpm
-        ansible.builtin.command: npm install -g pnpm
-        args:
-          creates: /usr/local/bin/pnpm
+    - name: Install pnpm
+      ansible.builtin.command: npm install -g pnpm
+      args:
+        creates: /usr/local/bin/pnpm
 
-      - name: Install Zigbee2MQTT dependencies
-        ansible.builtin.command: pnpm install --force --frozen-lockfile
-        args:
-          chdir: /opt/zigbee2mqtt
+    - name: Install Zigbee2MQTT dependencies
+      ansible.builtin.command: pnpm install --force --frozen-lockfile
+      args:
+        chdir: /opt/zigbee2mqtt
 
-      - name: Create Zigbee2MQTT configuration file
-        ansible.builtin.copy:
-          dest: /opt/zigbee2mqtt/data/configuration.yaml
-          src: vars/zigbee2mqtt/configuration.yaml
-          owner: pi
-          group: pi
-          mode: '0644'
+    - name: Create Zigbee2MQTT configuration file
+      ansible.builtin.copy:
+        dest: /opt/zigbee2mqtt/data/configuration.yaml
+        src: vars/zigbee2mqtt/configuration.yaml
+        owner: pi
+        group: pi
+        mode: '0644'
 
-      - name: Add required groups for Zigbee2MQTT
-        ansible.builtin.user:
-          name: pi
-          groups: dialout,tty,uucp
-          state: present
-          append: yes
+    - name: Add required groups for Zigbee2MQTT
+      ansible.builtin.user:
+        name: pi
+        groups: dialout,tty,uucp
+        state: present
+        append: yes
 
-      - name: Ensure zigbee2mqtt service file is present
-        template:
-          src: vars/zigbee2mqtt/zigbee2mqtt.service.j2
-          dest: /etc/systemd/system/zigbee2mqtt.service
-          owner: root
-          group: root
-          mode: '0644'
+    - name: Ensure zigbee2mqtt service file is present
+      template:
+        src: vars/zigbee2mqtt/zigbee2mqtt.service.j2
+        dest: /etc/systemd/system/zigbee2mqtt.service
+        owner: root
+        group: root
+        mode: '0644'
 
-      - name: Reload systemd
-        systemd:
-          daemon_reload: yes
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
 
-      - name: Restart zigbee2mqtt
-        systemd:
-          name: zigbee2mqtt
-          state: restarted
+    - name: Restart zigbee2mqtt
+      systemd:
+        name: zigbee2mqtt
+        state: restarted
 
-      - name: Ensure zigbee2mqtt service is enabled and started
-        systemd_service:
-          name: zigbee2mqtt
-          enabled: yes
-          state: started
+    - name: Ensure zigbee2mqtt service is enabled and started
+      systemd_service:
+        name: zigbee2mqtt
+        enabled: yes
+        state: started
