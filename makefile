@@ -37,3 +37,12 @@ k3s-node:
 		--tags=$(tags) \
 		--hostname=$(hostname) \
 		--remote=$(user)
+
+## Makefile for Pi-hole Server
+## - pihole-server
+## - arguments: hostname, user
+pihole-server:
+	./run.sh pihole-server \
+		--tags=$(tags) \
+		--hostname=$(hostname) \
+		--remote=$(user)

@@ -1,0 +1,63 @@
+---
+- name: Check if Pi-Hole is already installed
+  stat:
+    path: /opt/pihole/.pihole_install_complete
+  register: pihole_install_check
+
+- name: Debug & print variables
+  debug:
+    msg:
+      - "Pi-Hole install check: {{ pihole_install_check }}"
+      - "Gateway IP: {{ gateway_ip }}"
+      - "Network Interface: {{ network_interface }}"
+      - "IPv4 Address: {{ ipv4_address }}"
+      - "IPv6 Address: {{ ipv6_address }}"
+      - "DNS Servers: {{ dns_servers }}"
+
+- name: Exit if Pi-Hole is already installed
+  when: pihole_install_check.stat.exists
+  meta: end_play
+
+- name: 'Download Pi-Hole installer'
+  get_url:
+    url: https://install.pi-hole.net
+    dest: ~/install-pihole.sh
+    mode: 0740
+
+- name: Create pihole configuration directory
+  become: true
+  file: name="{{ fspath_pihole_config }}"
+    state=directory
+    owner=root
+    group=root
+    mode=0755
+
+- name: Create pihole configuration
+  become: true
+  template: src="setupVars.conf.j2"
+    dest="{{ fspath_pihole_config }}/setupVars.conf"
+    owner=root
+    group=root
+    mode=0644
+
+- name: Install Pi-Hole
+  become: true
+  # shell: '~/install-pihole.sh --unattended && echo "installed" > /opt/pihole/.pihole_install_complete || echo "failed"'
+  shell: 'date > /opt/pihole/.pihole_install_complete || echo "failed"'
+  args:
+    creates: /opt/pihole/.pihole_install_complete
+  register: pihole_installed
+
+- name: Set PiHole to update every week
+  become: true
+  replace:
+    path: /etc/cron.d/pihole
+    regexp: '^#(.*updatePihole.*)$'
+    replace: '\1'
+    backup: yes
+
+- name: Reboot
+  command: /bin/true
+  changed_when: true
+  when: pihole_installed.changed
+  notify: reboot

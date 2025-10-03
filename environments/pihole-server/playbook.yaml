@@ -1,0 +1,31 @@
+---
+######################################################
+## Base Setup
+######################################################
+
+- name: Ansible Playbook for configuring RPi base env on Raspberry Pi
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  become: yes
+  hosts: rpi-pihole
+  tags:
+    - base
+  vars:
+    locals: '{{ defaults | combine(overrides | default({})) }}'
+    overrides:
+      hostname: "{{ hostname | default('rpi-pihole-' + (9999 | random | string)) }}"
+  roles:
+    - role: dev-server
+      vars:
+        config: '{{ locals }}'
+
+######################################################
+## PiHole Setup
+######################################################
+
+- name: Install PiHole
+  remote_user: '{{ remote | default(defaults.remote) }}'
+  hosts: rpi-pihole
+  tags:
+    - pihole
+  roles:
+    - pihole

@@ -1,0 +1,8 @@
+- name: reboot
+  become: true
+  reboot:
+    msg: "{{ system_reboot_message | default('System rebooting') }}"
+    reboot_timeout: "{{ system_reboot_timeout | default(120) }}"
+    pre_reboot_delay: 5
+    post_reboot_delay: 60
+  listen: reboot
